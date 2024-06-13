@@ -76,6 +76,10 @@ export const makeSocket = (config: SocketConfig) => {
 		url = new URL(`tcp://${MOBILE_ENDPOINT}:${MOBILE_PORT}`)
 	}
 
+	if(!config.mobile && url.protocol === 'wss' && authState?.creds?.routingInfo) {
+		url.searchParams.append('ED', authState.creds.routingInfo.toString('base64url'))
+	}
+
 	const ws = config.socket ? config.socket : config.mobile ? new MobileSocketClient(url, config) : new WebSocketClient(url, config)
 
 	ws.connect()
@@ -88,7 +92,8 @@ export const makeSocket = (config: SocketConfig) => {
 		keyPair: ephemeralKeyPair,
 		NOISE_HEADER: config.mobile ? MOBILE_NOISE_HEADER : NOISE_WA_HEADER,
 		mobile: config.mobile,
-		logger
+		logger,
+		routingInfo: authState?.creds?.routingInfo
 	})
 
 	const { creds } = authState
