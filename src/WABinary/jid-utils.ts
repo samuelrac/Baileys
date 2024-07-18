@@ -48,6 +48,8 @@ export const areJidsSameUser = (jid1: string | undefined, jid2: string | undefin
 export const isJidUser = (jid: string | undefined) => (jid?.endsWith('@s.whatsapp.net'))
 /** is the jid a group */
 export const isLidUser = (jid: string | undefined) => (jid?.endsWith('@lid'))
+/** is the jid a newsletter */
+export const isJidNewsletter = (jid: string | undefined) => (jid?.endsWith('@newsletter'))
 /** is the jid a broadcast */
 export const isJidBroadcast = (jid: string | undefined) => (jid?.endsWith('@broadcast'))
 /** is the jid a group */

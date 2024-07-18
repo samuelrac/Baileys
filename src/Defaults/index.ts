@@ -125,8 +125,8 @@ export const MIN_PREKEY_COUNT = 5
 export const INITIAL_PREKEY_COUNT = 30
 
 export const DEFAULT_CACHE_TTLS = {
-	SIGNAL_STORE: 5 * 60, // 5 minutes
+	SIGNAL_STORE: 10 * 60, // 10 minutes
 	MSG_RETRY: 60 * 60, // 1 hour
-	CALL_OFFER: 5 * 60, // 5 minutes
-	USER_DEVICES: 5 * 60, // 5 minutes
+	CALL_OFFER: 2 * 60, // 2 minutes
+	USER_DEVICES: 30 * 60, // 30 minutes
 }
