@@ -160,6 +160,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			}
 		}
 
+		if(!users.length) {
+			return deviceResults
+		}
+
 		const iq: BinaryNode = {
 			tag: 'iq',
 			attrs: {
@@ -259,6 +263,34 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		return didFetchNewSession
+	}
+
+	const sendPeerDataOperationMessage = async(
+		pdoMessage: proto.Message.IPeerDataOperationRequestMessage
+	): Promise<string> => {
+		//TODO: for later, abstract the logic to send a Peer Message instead of just PDO - useful for App State Key Resync with phone
+		if(!authState.creds.me?.id) {
+			throw new Boom('Not authenticated')
+		}
+
+		const protocolMessage: proto.IMessage = {
+			protocolMessage: {
+				peerDataOperationRequestMessage: pdoMessage,
+				type: proto.Message.ProtocolMessage.Type.PEER_DATA_OPERATION_REQUEST_MESSAGE
+			}
+		}
+
+		const meJid = jidNormalizedUser(authState.creds.me.id)!
+
+		const msgId = await relayMessage(meJid, protocolMessage, {
+			additionalAttributes: {
+				category: 'peer',
+				// eslint-disable-next-line camelcase
+				push_priority: 'high_force',
+			},
+		})
+
+		return msgId
 	}
 
 	const createParticipantNodes = async(
@@ -433,12 +465,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					if(!participant) {
 						devices.push({ user })
 						// do not send message to self if the device is 0 (mobile)
-						if(meDevice !== undefined && meDevice !== 0) {
-							devices.push({ user: meUser })
-						}
 
-						const additionalDevices = await getUSyncDevices([ meId, jid ], !!useUserDevicesCache, true)
-						devices.push(...additionalDevices)
+						if(!(additionalAttributes?.['category'] === 'peer' && user === meUser)) {
+							if(meDevice !== undefined && meDevice !== 0) {
+								devices.push({ user: meUser })
+							}
+
+							const additionalDevices = await getUSyncDevices([ meId, jid ], !!useUserDevicesCache, true)
+							devices.push(...additionalDevices)
+						}
 					}
 
 					const allJids: string[] = []
@@ -472,11 +507,18 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				}
 
 				if(participants.length) {
-					binaryNodeContent.push({
-						tag: 'participants',
-						attrs: { },
-						content: participants
-					})
+					if(additionalAttributes?.['category'] === 'peer') {
+						const peerNode = participants[0]?.content?.[0] as BinaryNode
+						if(peerNode) {
+							binaryNodeContent.push(peerNode) // push only enc
+						}
+					} else {
+						binaryNodeContent.push({
+							tag: 'participants',
+							attrs: { },
+							content: participants
+						})
+					}
 				}
 
 				const stanza: BinaryNode = {
@@ -646,8 +688,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		getButtonArgs,
 		readMessages,
 		refreshMediaConn,
-	    	waUploadToServer,
+		waUploadToServer,
 		fetchPrivacySettings,
+		sendPeerDataOperationMessage,
 		updateMediaMessage: async(message: proto.IWebMessageInfo) => {
 			const content = assertMediaContent(message.message)
 			const mediaKey = content.mediaKey!
