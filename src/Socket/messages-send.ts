@@ -280,7 +280,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			}
 		}
 
-		const meJid = jidNormalizedUser(authState.creds.me.id)!
+		const meJid = jidNormalizedUser(authState.creds.me.id)
 
 		const msgId = await relayMessage(meJid, protocolMessage, {
 			additionalAttributes: {
@@ -393,7 +393,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							let groupData = useCachedGroupMetadata && cachedGroupMetadata ? await cachedGroupMetadata(jid) : undefined
 							if(groupData && Array.isArray(groupData?.participants)) {
 								logger.trace({ jid, participants: groupData.participants.length }, 'using cached group metadata')
-							} else {
+							} else if(!isStatus) {
 								groupData = await groupMetadata(jid)
 							}
 
