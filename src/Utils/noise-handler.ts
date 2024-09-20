@@ -16,13 +16,11 @@ const generateIV = (counter: number) => {
 export const makeNoiseHandler = ({
 	keyPair: { private: privateKey, public: publicKey },
 	NOISE_HEADER,
-	mobile,
 	logger,
 	routingInfo
 }: {
 	keyPair: KeyPair
 	NOISE_HEADER: Uint8Array
-	mobile: boolean
 	logger: Logger
 	routingInfo?: Buffer | undefined
 }) => {
@@ -113,16 +111,13 @@ export const makeNoiseHandler = ({
 
 			const certDecoded = decrypt(serverHello!.payload!)
 
-			if(mobile) {
-				proto.CertChain.NoiseCertificate.decode(certDecoded)
-			} else {
-				const { intermediate: certIntermediate } = proto.CertChain.decode(certDecoded)
 
-				const { issuerSerial } = proto.CertChain.NoiseCertificate.Details.decode(certIntermediate!.details!)
+			const { intermediate: certIntermediate } = proto.CertChain.decode(certDecoded)
 
-				if(issuerSerial !== WA_CERT_DETAILS.SERIAL) {
-					throw new Boom('certification match failed', { statusCode: 400 })
-				}
+			const { issuerSerial } = proto.CertChain.NoiseCertificate.Details.decode(certIntermediate!.details!)
+
+			if(issuerSerial !== WA_CERT_DETAILS.SERIAL) {
+				throw new Boom('certification match failed', { statusCode: 400 })
 			}
 
 			const keyEnc = encrypt(noiseKey.public)
